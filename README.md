@@ -2,7 +2,7 @@
 # ASTRA :crossed_swords:
 ![Astra](https://user-images.githubusercontent.com/100226024/229372304-6356f3ea-ad1f-4d8c-88ec-6cc49a0bbfb5.png)
 
-+ Astra is a script that automates the installation of all the tools associated with [ProjectDiscovery](https://github.com/projectdiscovery/nuclei) allowing users to install them quickly and easily.
++ Astra is a script that automates the installation of all the tools associated with [ProjectDiscovery](https://github.com/projectdiscovery/nuclei) allowing users to install them quickly and easily. ( It builds the tool and install from scratch)
 
 + Following are the Presequites for Astra
   * Golang with version 1.19.2 and above
