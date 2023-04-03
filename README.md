@@ -4,6 +4,8 @@
 
 + Astra is a script that automates the installation of all the tools associated with [ProjectDiscovery](https://github.com/projectdiscovery/nuclei) allowing users to install them quickly and easily. ( It builds the tool and install from scratch)
 
++ Tested on Ubuntu and Kali
+
 + Following are the Presequites for Astra
   * Golang with version 1.19.2 and above
   * Figlet
