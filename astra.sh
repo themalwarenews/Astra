@@ -152,6 +152,26 @@ echo -e "${green}  [+] checking the Version of httpx installed ${reset} "
     httpx -version
 }
 
+install_tlsx(){
+
+    cd "$current_dir"
+echo -e "${green}  [+] cloning tlsx github repo... "
+    # Cloning repo  
+    git clone -q https://github.com/projectdiscovery/tlsx.git
+echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
+    # Navigate to cloned repo
+    cd tlsx/cmd/tlsx
+echo -e "${green}  [+] lets build httpx binary...."
+    # Building binary
+    sudo go build > /dev/null 2>&1
+echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
+    # Moving binary to /usr/local/bin 
+    sudo mv tlsx /usr/local/bin
+echo -e "${green}  [+] checking the Version of httpx installed ${reset} "
+     # Displaying the httpx version
+    tlsx -version
+}
+
 install_interactsh(){
 
     cd "$current_dir"
@@ -257,6 +277,7 @@ echo -e  "${blue} 6. interactsh : An OOB interaction gathering server and client
 echo -e  "${blue} 7. proxify : Swiss Army knife Proxy tool for HTTP/HTTPS traffic capture, manipulation, and replay on the go. \n"
 echo -e  "${blue} 8. uncover : Quickly discover exposed hosts on the internet using multiple search engines. \n"
 echo -e  "${blue} 9. asnmap : Go CLI and Library for quickly mapping organization network ranges using ASN information. \n ${reset}"
+echo -e  "${blue} 10. tlsx : A fast and configurable TLS grabber focused on TLS based data collection and analysis. \n ${reset}"
 echo -e  "${red} 0. All the  tools listed \n${reset} "
 
 read -p "Enter your choice: " choice
@@ -299,6 +320,10 @@ case $choice in
         echo "Installing Asnmap...."
         install_asnmap
         ;;
+    10)
+        echo "Installing tlsx...."
+        install_tlsx
+        ;;
     0)
         echo "Installing ALL Tools...."
         install_nuclei
@@ -310,6 +335,7 @@ case $choice in
         install_proxify
         install_uncover
         install_asnmap
+        install_tlsx
         ;;
     *)
         echo "Invalid choice. Exiting..."
