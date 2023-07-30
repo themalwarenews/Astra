@@ -13,13 +13,10 @@
 
 + Currently ASTRA supports installation of below tools
   * [Nuclei](https://github.com/projectdiscovery/nuclei)
-  * [Interactsh](https://github.com/projectdiscovery/interactsh)
   * [Subfinder](https://github.com/projectdiscovery/subfinder)
   * [naabu](https://github.com/projectdiscovery/naabu)
-  * [Asnmap](https://github.com/projectdiscovery/asnmap)
   * [katana](https://github.com/projectdiscovery/katana)
   * [httpx](https://github.com/projectdiscovery/httpx)
-  * [Proxify](https://github.com/projectdiscovery/proxify)
   * [Uncover](https://github.com/projectdiscovery/uncover)
  --- 
  ## Run Locally
@@ -47,7 +44,6 @@ run script
 ```bash
   sudo ./astra.sh
 ``` 
-  ![image](https://user-images.githubusercontent.com/100226024/229372719-47464d77-030d-4c51-8931-54dc23277b28.png)
   
   Feel free to notify us for any errors :slightly_smiling_face:
   
