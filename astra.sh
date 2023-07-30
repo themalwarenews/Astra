@@ -1,343 +1,220 @@
 #!/bin/bash
 
-red='\033[0;31m'
-green='\033[0;32m'
-yellow='\033[0;33m'
-blue='\033[0;34m'
-purple='\033[0;35m'
-cyan='\033[0;36m'
-white='\033[0;37m'
+# Function to install required packages if missing
+install_required_packages() {
+    local required_packages=("wget" "unzip" "figlet")
+    local missing_packages=()
 
-# Reset color to default
-reset='\033[0m'
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &>/dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
 
-check_requirements(){
-        # Check if Figlet is installed
-    if ! command -v figlet &> /dev/null
-    then
-        # Install Figlet package
-        echo -e "${green}Installaing figlet. Please wait....${reset}"
-        sudo apt update -qq
-        sudo apt install -yqq figlet > /dev/null 2>&1
-    else
-        figlet -f slant "ASTRA"
+    if [ ${#missing_packages[@]} -gt 0 ]; then
+        echo "Installing required packages: ${missing_packages[*]}"
+        if command -v apt-get &>/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -qq -y "${missing_packages[@]}" >/dev/null
+        elif command -v yum &>/dev/null; then
+            sudo yum install -y "${missing_packages[@]}"
+        else
+            echo "Error: Package manager not found. Please install '${missing_packages[*]}' manually and run the script again."
+            exit 1
+        fi
     fi
+}
 
+install_naabu(){
 
-    # Set the required version number
-    REQUIRED_VERSION="1.19.2"
+    echo "-------------------------------------------------------"
+    echo "Installing naabu..."
+    # Step 4: Download the naabu release
+    naabu_version="2.1.6"
+    naabu_download_url="https://github.com/projectdiscovery/naabu/releases/download/v${naabu_version}/naabu_${naabu_version}_linux_amd64.zip"
 
-    # Get the current Go version
-    CURRENT_VERSION=$(go version | awk '{print $3}')
+    # Download naabu zip file with progress bar
+    echo "Downloading naabu..."
+    wget --quiet "$naabu_download_url" -O "naabu_${naabu_version}_linux_amd64.zip" 2>&1 
 
-    # Compare the versions
-    if [ "$CURRENT_VERSION" != "go$REQUIRED_VERSION" ]; then
-        echo "Your Go version is $CURRENT_VERSION, but $REQUIRED_VERSION is required."
-        echo "Please upgrade to $REQUIRED_VERSION or later."
-        exit 1
-    fi
+    # Step 5: Unzip the downloaded file with progress bar
+    echo "Extracting naabu..."
+    unzip "naabu_${naabu_version}_linux_amd64.zip" 
 
-    #check whther script is running as root./
-    if [[ $EUID -ne 0 ]]; then
-     echo "This script must be run as root."
-     exit 1
-    fi
+    # Step 6: Move the binary file to "/usr/local/bin" using sudo
+    echo "Moving naabu binary to /usr/local/bin..."
+    sudo mv naabu /usr/local/bin/
 
+    # Step 7: Run the binary and check the version
+    echo "Checking naabu version..."
+    naabu --version
 
-    if ! command -v git &> /dev/null
-    then
-        echo -e "${green}Installaing Git. Please wait....${reset}"
-        sudo apt-get update -qq
-        sudo apt-get install -yqq git > /dev/null 2>&1
-    fi
+    # Clean up: Remove the downloaded zip file
+    rm "naabu_${naabu_version}_linux_amd64.zip"
+
+    echo "naabu has been installed and is ready for use."
+
+    rm -rf *
+    echo "-------------------------------------------------------"
 }
 
 install_nuclei() {
+     echo "-------------------------------------------------------"
+    echo "Installing nuclei..."
+    local nuclei_version="2.9.10"
+    local nuclei_download_url="https://github.com/projectdiscovery/nuclei/releases/download/v${nuclei_version}/nuclei_${nuclei_version}_linux_amd64.zip"
 
- cd "$current_dir"
-echo -e "${green}  [+] cloning Nuclei repo... "
-  # Cloning Nuclei repository in silent mode
-  git clone -q https://github.com/projectdiscovery/nuclei.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-  # Navigating to the nuclei command directory
-  cd nuclei/v2/cmd/nuclei
-echo -e "${green}  [+] lets build Nuclei binary...."
-  # Building nuclei from source code in silent mode
-  sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-  # Moving the nuclei executable to /usr/local/bin directory in silent mode
-  sudo mv nuclei /usr/local/bin/
-echo -e "${green}  [+] checking the Version of Nuclei installed ${reset} "
-  # Displaying the nuclei version
-  nuclei -version
+    echo "Downloading nuclei..."
+    wget --quiet "$nuclei_download_url" -O "nuclei_${nuclei_version}_linux_amd64.zip" 2>&1
+
+    echo "Extracting nuclei..."
+    unzip "nuclei_${nuclei_version}_linux_amd64.zip"
+
+    echo "Moving nuclei binary to /usr/local/bin..."
+    sudo mv nuclei /usr/local/bin/
+
+    echo "Checking nuclei version..."
+    nuclei --version
+
+    rm "nuclei_${nuclei_version}_linux_amd64.zip"
+
+    echo "nuclei has been installed and is ready for use."
+
+    rm -rf *
+     echo "-------------------------------------------------------"
 }
 
-install_subfinder()
-{
-    cd "$current_dir"
-echo -e "${green}  [+] cloning Subfinder repo... "
-    # Cloning repo
-    git clone -q https://github.com/projectdiscovery/subfinder.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd subfinder/v2/cmd/subfinder
-echo -e "${green}  [+] lets build Subfinder binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv subfinder /usr/local/bin
-echo -e "${green}  [+] checking the Version of subfinder installed ${reset} "
-    # Displaying the subfinder version
-    subfinder -version
+install_httpx() {
+     echo "-------------------------------------------------------"
+    echo "Installing httpx..."
+    local httpx_version="1.3.4"
+    local httpx_download_url="https://github.com/projectdiscovery/httpx/releases/download/v${httpx_version}/httpx_${httpx_version}_linux_amd64.zip"
+
+    echo "Downloading httpx..."
+    wget --quiet "$httpx_download_url" -O "httpx_${httpx_version}_linux_amd64.zip" 2>&1
+
+    echo "Extracting httpx..."
+    unzip "httpx_${httpx_version}_linux_amd64.zip"
+
+    echo "Moving httpx binary to /usr/local/bin..."
+    sudo mv httpx /usr/local/bin/
+
+    echo "Checking httpx version..."
+    httpx version
+
+    rm "httpx_${httpx_version}_linux_amd64.zip"
+
+    echo "httpx has been installed and is ready for use."
+
+    rm -rf *
+     echo "-------------------------------------------------------"
 }
 
+install_subfinder() {
+     echo "-------------------------------------------------------"
+    echo "Installing subfinder..."
+    local subfinder_version="2.6.1"
+    local subfinder_download_url="https://github.com/projectdiscovery/subfinder/releases/download/v${subfinder_version}/subfinder_${subfinder_version}_linux_amd64.zip"
 
-install_naabu(){
-    cd "$current_dir"
-echo -e "${green}  [+] cloning naabu repo... "
-    # Cloning repo  
-    git clone -q https://github.com/projectdiscovery/naabu.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd naabu/v2/cmd/naabu
-echo -e "${green}  [+] lets build naabu binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv naabu /usr/local/bin
-echo -e "${green}  [+] checking the Version of naabu installed ${reset} "
-     # Displaying the naabu version
-    naabu -version
+    echo "Downloading subfinder..."
+    wget --quiet "$subfinder_download_url" -O "subfinder_${subfinder_version}_linux_amd64.zip" 2>&1
+
+    echo "Extracting subfinder..."
+    unzip "subfinder_${subfinder_version}_linux_amd64.zip"
+
+    echo "Moving subfinder binary to /usr/local/bin..."
+    sudo mv subfinder /usr/local/bin/
+
+    echo "Checking subfinder version..."
+    subfinder version
+
+    rm "subfinder_${subfinder_version}_linux_amd64.zip"
+
+    echo "subfinder has been installed and is ready for use."
+
+    rm -rf *
+     echo "-------------------------------------------------------"
 }
 
-install_katana(){
+install_katana() {
+     echo "-------------------------------------------------------"
+    echo "Installing katana..."
+    local katana_version="1.0.2"
+    local katana_download_url="https://github.com/projectdiscovery/katana/releases/download/v${katana_version}/katana_${katana_version}_linux_amd64.zip"
 
-    cd "$current_dir"
-echo -e "${green}  [+] cloning katana github repo... "
-    # Cloning repo  
-    git clone -q https://github.com/projectdiscovery/katana.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd katana/cmd/katana
-echo -e "${green}  [+] lets build Katana binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv katana /usr/local/bin
-echo -e "${green}  [+] checking the Version of katana installed ${reset} "  
-     # Displaying the katana version
-    katana -version
+    echo "Downloading katana..."
+    wget --quiet "$katana_download_url" -O "katana_${katana_version}_linux_amd64.zip" 2>&1
+
+    echo "Extracting katana..."
+    unzip "katana_${katana_version}_linux_amd64.zip"
+
+    echo "Moving katana binary to /usr/local/bin..."
+    sudo mv katana /usr/local/bin/
+
+    echo "Checking katana version..."
+    katana version
+
+    rm "katana_${katana_version}_linux_amd64.zip"
+
+    echo "katana has been installed and is ready for use."
+
+    rm -rf *
+     echo "-------------------------------------------------------"
 }
 
-install_httpx(){
+install_uncover() {
+     echo "-------------------------------------------------------"
+    echo "Installing uncover..."
+    local uncover_version="1.0.5"
+    local uncover_download_url="https://github.com/projectdiscovery/uncover/releases/download/v${uncover_version}/uncover_${uncover_version}_linux_amd64.zip"
 
-    cd "$current_dir"
-echo -e "${green}  [+] cloning httpx github repo... "
-    # Cloning repo  
-    git clone -q https://github.com/projectdiscovery/httpx.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd httpx/cmd/httpx
-echo -e "${green}  [+] lets build httpx binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv httpx /usr/local/bin
-echo -e "${green}  [+] checking the Version of httpx installed ${reset} "
-     # Displaying the httpx version
-    httpx -version
+    echo "Downloading uncover..."
+    wget --quiet "$uncover_download_url" -O "uncover_${uncover_version}_linux_amd64.zip" 2>&1
+
+    echo "Extracting uncover..."
+    unzip "uncover_${uncover_version}_linux_amd64.zip"
+
+    echo "Moving uncover binary to /usr/local/bin..."
+    sudo mv uncover /usr/local/bin/
+
+    echo "Checking uncover version..."
+    uncover version
+
+    rm "uncover_${uncover_version}_linux_amd64.zip"
+
+    echo "uncover has been installed and is ready for use."
+
+    rm -rf *
+     echo "-------------------------------------------------------"
 }
 
-install_tlsx(){
+ 
 
-    cd "$current_dir"
-echo -e "${green}  [+] cloning tlsx github repo... "
-    # Cloning repo  
-    git clone -q https://github.com/projectdiscovery/tlsx.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd tlsx/cmd/tlsx
-echo -e "${green}  [+] lets build httpx binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv tlsx /usr/local/bin
-echo -e "${green}  [+] checking the Version of httpx installed ${reset} "
-     # Displaying the httpx version
-    tlsx -version
-}
+ # Step 1: Install required packages
+install_required_packages
 
-install_interactsh(){
+figlet -f slant "ASTRA"
 
-    cd "$current_dir"
-echo -e "${green}  [+] cloning interactsh github repo... "
-    # Cloning repo  
-    git clone -q https://github.com/projectdiscovery/interactsh.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd interactsh/cmd/interactsh-client
-echo -e "${green}  [+] lets interactsh-client Proxify binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e "${green}  [+] checking the Version of interacsh-client installed ${reset} "
-    # Moving binary to /usr/local/bin 
-    sudo mv interactsh-client /usr/local/bin
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    cd ../interactsh-server
-echo -e "${green}  [+] lets build interactsh-server binary...."
-    # Building binary
-    go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv interactsh-server /usr/local/bin
-echo -e "${green}  [+] checking the Version of interacsh-server installed ${reset} "
-     # Displaying the interacsh version
-    interactsh-server -version
+# Step 2: Create a directory named 'all_tools'
+mkdir -p all_tools
 
-}
+# Step 3: Change directory to 'all_tools'
+cd all_tools || exit
 
-install_proxify(){
+# installing naabu
+install_naabu
 
-    cd "$current_dir"
-echo -e "${green}  [+] cloning Proxify github repo... "
-    # Cloning repo  
-    git clone -q https://github.com/projectdiscovery/proxify.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd proxify/cmd/proxify
-echo -e "${green}  [+] lets build Proxify binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv proxify /usr/local/bin
-echo -e "${green}  [+] checking the Version of Proxify installed ${reset} "
-     # Displaying the proxify version
-    proxify -version
-}
+# installing nuclei
+install_nuclei
 
-install_uncover(){
+# installing Subfinder
+install_subfinder
 
-    cd "$current_dir"
-echo -e "${green}  [+] cloning uncover github repo... "
-    # Cloning repo  
-    git clone -q https://github.com/projectdiscovery/uncover.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd uncover/cmd/uncover
-echo -e "${green}  [+] lets build Proxify binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv uncover /usr/local/bin
-echo -e "${green}  [+] checking the Version of uncover installed ${reset} "
-     # Displaying the uncover version
-    uncover -version
-}
+# installing katana
+install_katana
 
-install_asnmap(){
+# installing httpx
+install_httpx
 
-    cd "$current_dir"
-echo -e "${green}  [+] cloning asnmap github repo... "
-    # Cloning repo  
-    git clone -q https://github.com/projectdiscovery/asnmap.git
-echo -e "${green}  [+] Git cloned, lets move to main.go directory..."
-    # Navigate to cloned repo
-    cd asnmap/cmd/asnmap
-echo -e "${green}  [+] lets build Proxify binary...."
-    # Building binary
-    sudo go build > /dev/null 2>&1
-echo -e " ${green} [+] Binary built, moving it to the /usr/local/bin/..."
-    # Moving binary to /usr/local/bin 
-    sudo mv asnmap /usr/local/bin
-echo -e "${green}  [+] checking the Version of asnmap installed ${reset} "
-     # Displaying the uncover version
-    asnmap -version
-
-}
-
-check_requirements
-
-mkdir astra-tools
-cd astra-tools
-current_dir=$(pwd)
-echo -e "${cyan} \n Which tool do you want to install? \n${reset} "
-echo -e "${blue} 1. Nuclei : Fast and customizable vulnerability scanner based on simple YAML based DSL \n"
-echo -e  "${blue} 2. Subfinder : Fast passive subdomain enumeration tool. \n"
-echo -e  "${blue} 3. naabu : A fast port scanner written in go with a focus on reliability and simplicity. Designed to be used in combination with other tools for attack surface discovery in bug bounties and pentests \n"
-echo -e  "${blue} 4. katana : A next-generation crawling and spidering framework. \n"
-echo -e  "${blue} 5. httpx : httpx is a fast and multi-purpose HTTP toolkit that allows running multiple probes using the retryablehttp library. \n"
-echo -e  "${blue} 6. interactsh : An OOB interaction gathering server and client library \n"
-echo -e  "${blue} 7. proxify : Swiss Army knife Proxy tool for HTTP/HTTPS traffic capture, manipulation, and replay on the go. \n"
-echo -e  "${blue} 8. uncover : Quickly discover exposed hosts on the internet using multiple search engines. \n"
-echo -e  "${blue} 9. asnmap : Go CLI and Library for quickly mapping organization network ranges using ASN information. \n ${reset}"
-echo -e  "${blue} 10. tlsx : A fast and configurable TLS grabber focused on TLS based data collection and analysis. \n ${reset}"
-echo -e  "${red} 0. All the  tools listed \n${reset} "
-
-read -p "Enter your choice: " choice
-
-
-case $choice in
-    1)
-        echo "Installing Nuclei...."
-        install_nuclei
-        ;;
-    2)
-        echo "Installing Subfinder...."
-        install_subfinder
-        ;;
-    3)
-        echo "Installing Naabu...."
-        install_naabu
-        ;;
-    4)
-        echo "Installing katana...."
-        install_katana
-        ;;
-    5)
-        echo "Installing httpx...."
-        install_httpx
-        ;;
-    6)
-        echo "Installing interactsh...."
-        install_interactsh
-        ;;
-    7)
-        echo "Installing proxify...."
-        install_proxify
-        ;;
-    8)
-        echo "Installing Uncover...."
-        install_uncover
-        ;;
-    9)
-        echo "Installing Asnmap...."
-        install_asnmap
-        ;;
-    10)
-        echo "Installing tlsx...."
-        install_tlsx
-        ;;
-    0)
-        echo "Installing ALL Tools...."
-        install_nuclei
-        install_subfinder
-        install_naabu
-        install_katana
-        install_httpx
-        install_interactsh
-        install_proxify
-        install_uncover
-        install_asnmap
-        install_tlsx
-        ;;
-    *)
-        echo "Invalid choice. Exiting..."
-        ;;
-esac
+# installing uncover
+install_uncover
